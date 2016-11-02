@@ -1,11 +1,12 @@
 package deadline.swiperecyclerview;
 
 /**
- * @auther deadline
+ * @author deadline
  * @time   2016/10/22
  */
-public interface OnLoadMoreListener {
+public interface OnLoadListener {
 
+    void onRefresh();
 
     void onLoadMore();
 }
