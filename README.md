@@ -1,7 +1,7 @@
 #SwipeRecyclerView
 SwipeRefreshLayout + RecyclerView 实现的下拉刷新，上拉加载更多
 
-#ScreenShot
+#ScreenShot（效果图是循环播放的，所以感觉有点诡异）
 ![](https://github.com/niniloveyou/SwipeRecyclerView/blob/master/swipeRecyclerView.gif)
 
 #导航
