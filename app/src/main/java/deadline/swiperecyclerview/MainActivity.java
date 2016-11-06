@@ -17,8 +17,9 @@ public class MainActivity extends AppCompatActivity {
 
     private SwipeRecyclerView recyclerView;
     private List<String> data;
-
     private RecyclerViewAdapter adapter;
+    private int pagerSize = 10;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,9 +94,6 @@ public class MainActivity extends AppCompatActivity {
         //recyclerView.onError("error");
 
         data = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            data.add(String.valueOf(i));
-        }
         adapter = new RecyclerViewAdapter();
         recyclerView.setAdapter(adapter);
 
@@ -107,15 +105,15 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         data.clear();
-                        for (int i = 0; i < 10; i++) {
+                        for (int i = 0; i < pagerSize; i++) {
                             data.add(String.valueOf(i));
                         }
 
-                        recyclerView.stopRefresh();
+                        recyclerView.complete();
                         adapter.notifyDataSetChanged();
 
                     }
-                }, 1500);
+                }, 1000);
 
             }
 
@@ -124,23 +122,24 @@ public class MainActivity extends AppCompatActivity {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        for (int i = 0; i < 10; i++) {
+                        for (int i = 0; i < pagerSize; i++) {
                             data.add(String.valueOf(i));
                         }
 
-
-                        recyclerView.stopLoadingMore();
-                        adapter.notifyDataSetChanged();
-
-
+                        if(data.size() > 20){
+                            recyclerView.onNoMore("-- the end --");
+                        }else {
+                            recyclerView.stopLoadingMore();
+                            adapter.notifyDataSetChanged();
+                        }
                     }
-                }, 1500);
+                }, 1000);
             }
         });
 
         //设置自动下拉刷新，切记要在recyclerView.setOnLoadListener()之后调用
         //因为在没有设置监听接口的情况下，setRefreshing(true),调用不到OnLoadListener
-       // recyclerView.setRefreshing(true);
+        recyclerView.setRefreshing(true);
     }
 
 

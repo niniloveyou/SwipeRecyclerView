@@ -257,12 +257,8 @@ public class SwipeRecyclerView extends FrameLayout
      * refresh or load more completed
      */
     public void complete(){
-        stopRefresh();
-        stopLoadingMore();
-    }
-
-    public void stopRefresh(){
         mRefreshLayout.setRefreshing(false);
+        stopLoadingMore();
     }
 
     /**
@@ -294,6 +290,11 @@ public class SwipeRecyclerView extends FrameLayout
     @Override
     public void onRefresh() {
         if(mListener != null){
+
+            //reset footer view status loading
+            if(mFootView != null){
+                mFootView.onLoadingMore();
+            }
             mListener.onRefresh();
         }
     }
