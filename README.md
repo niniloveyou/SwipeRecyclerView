@@ -71,7 +71,8 @@ SwipeRefreshLayout + RecyclerView 实现的下拉刷新，上拉加载更多
 ###7.需要对SwipeRefreshLayout或RecyclerView做其他的设置
 
           mSwipeRecyclerView.getSwipeRefreshLayout()
-          mSwipeRecyclerView.getRecyclerView()
+          mSwipeRecyclerView.getRecyclerView()
+          
           
           
 ###8.可能存在的问题
