@@ -94,3 +94,9 @@ SwipeRefreshLayout + RecyclerView 实现的下拉刷新，上拉加载更多
         
     mSwipeRecyclerView = (SwipeRecyclerView) findViewById(R.id.swipeRecyclerView);   
     
+
+#...
+      如果你觉得还可以star一下吧！
+      
+#about me
+我的博客：http://www.jianshu.com/users/25e80ace21b8/latest_articles
