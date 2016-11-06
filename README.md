@@ -41,7 +41,7 @@ SwipeRefreshLayout + RecyclerView 实现的下拉刷新，上拉加载更多
             }
         });
         
-###6.关于footerView的分割线
+###6.关于footerView的分割线 获取childCount - 1 不包含footerView即可 
 
          //设置去除footerView 的分割线
         mSwipeRecyclerView.getRecyclerView().addItemDecoration(new RecyclerView.ItemDecoration() {
@@ -54,8 +54,6 @@ SwipeRefreshLayout + RecyclerView 实现的下拉刷新，上拉加载更多
                 Rect rect = new Rect();
                 int left = parent.getPaddingLeft();
                 int right = parent.getWidth() - parent.getPaddingRight();
-                
-                //重点： 这里获取childCount 不包含footerView 即可
                 final int childCount = parent.getChildCount() - 1;
                 for (int i = 0; i < childCount; i++) {
                     final View child = parent.getChildAt(i);
@@ -78,18 +76,15 @@ SwipeRefreshLayout + RecyclerView 实现的下拉刷新，上拉加载更多
           
 ###8.可能存在的问题
 
-          由于Recycler.Adapter中关于数据集更新的方法全是final的，无法重写，并且自定义的DataObserver也没法实现的方法
-          如：notifyItemMoved方法
-          
-          因此使用除SwipeRecyclerView中DataObserver的方法之外的更新数据集的方法，可能会有问题
-          所以更新数据集建议采用DataObserver中有的方法。
+     由于Recycler.Adapter中关于数据集更新的方法全是final的，无法重写，并且自定义的DataObserver也没法实现的方法 如：notifyItemMoved方法
+     因此使用除SwipeRecyclerView中DataObserver的方法之外的更新数据集的方法，可能会有问题所以更新数据集建议采用DataObserver中有的方法。
           
           
 #Usage
 
 由于并没有放到jCenter
          
-     所以如果需要使用：请自行把layout目录下layout_swipe_recyclerview, layout_footer_view copy跟正常一样控件使用， 没有自定义属性
+    所以如果需要使用：请自行把layout目录下layout_swipe_recyclerview, layout_footer_view copy跟正常一样控件使用，没有自定义属性
         
     <deadline.swiperecyclerview.SwipeRecyclerView
         android:id="@+id/swipeRecyclerView"
