@@ -9,6 +9,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.OnScrollListener;
 import android.support.v7.widget.RecyclerView.LayoutManager;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.support.v7.widget.GridLayoutManager.SpanSizeLookup;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -16,10 +17,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import deadline.swiperecyclerview.footerView.BaseFooterView;
+import deadline.swiperecyclerview.footerView.FooterViewListener;
+import deadline.swiperecyclerview.footerView.SimpleFooterView;
+
 /**
  * @auther deadline
  * @time   2016/10/22
- * 仿知乎的刷新效果
+ * SwipeRefreshLayout + recyclerView
  */
 public class SwipeRecyclerView extends FrameLayout
                 implements SwipeRefreshLayout.OnRefreshListener{
@@ -31,6 +36,7 @@ public class SwipeRecyclerView extends FrameLayout
 
     private LayoutManager mLayoutManager;
     private OnLoadListener mListener;
+    private SpanSizeLookup mSpanSizeLookup;
     private DataObserver mDataObserver;
     private WrapperAdapter mWrapperAdapter;
 
@@ -38,7 +44,6 @@ public class SwipeRecyclerView extends FrameLayout
     private boolean isLoadingMore;
     private boolean isLoadMoreEnable;
     private boolean isRefreshEnable;
-    private boolean isAutoLoadMoreEnable;
 
     private int lastVisiablePosition = 0;
 
@@ -61,7 +66,6 @@ public class SwipeRecyclerView extends FrameLayout
         isRefreshEnable = true;
         isLoadingMore = false;
         isLoadMoreEnable = true;
-        isAutoLoadMoreEnable = true;
 
         mFootView = new SimpleFooterView(getContext());
 
@@ -75,21 +79,11 @@ public class SwipeRecyclerView extends FrameLayout
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
-                if(!isLoadMoreEnable || isRefreshing() || isLoadingMore){
-                    return;
-                }
-
-                int childCount = mWrapperAdapter == null ? 0 : mWrapperAdapter.getItemCount();
-                if(!isAutoLoadMoreEnable && lastVisiablePosition == childCount){
-
-                }
-
             }
 
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-
                 // do nothing if load more is not enable or refreshing or loading more
                 if(!isLoadMoreEnable || isRefreshing() || isLoadingMore){
                     return;
@@ -102,16 +96,13 @@ public class SwipeRecyclerView extends FrameLayout
                 }else if(mLayoutManager instanceof GridLayoutManager){
                     lastVisiablePosition = ((GridLayoutManager)mLayoutManager).findLastCompletelyVisibleItemPosition();
                 }else if(mLayoutManager instanceof StaggeredGridLayoutManager){
-
+                    int[] into = new int[((StaggeredGridLayoutManager) mLayoutManager).getSpanCount()];
+                    ((StaggeredGridLayoutManager) mLayoutManager).findLastVisibleItemPositions(into);
+                    lastVisiablePosition = findMax(into);
                 }
 
-                // do nothing if you set do not auto load more
-                // when scroll to the bottom of recyclerView
-                if(!isAutoLoadMoreEnable){
-                    return;
-                }
                 int childCount = mWrapperAdapter == null ? 0 : mWrapperAdapter.getItemCount();
-                if(lastVisiablePosition == childCount - 1){
+                if(childCount > 1 && lastVisiablePosition == childCount - 1){
 
                     if(mListener != null){
                         isLoadingMore = true;
@@ -120,6 +111,16 @@ public class SwipeRecyclerView extends FrameLayout
                 }
             }
         });
+    }
+
+    private int findMax(int[] lastPositions) {
+        int max = lastPositions[0];
+        for (int value : lastPositions) {
+            if (value > max) {
+                max = value;
+            }
+        }
+        return max;
     }
 
     /**
@@ -131,12 +132,8 @@ public class SwipeRecyclerView extends FrameLayout
         mRefreshLayout.setEnabled(isRefreshEnable);
     }
 
-    /**
-     * set is auto load more when recyclerView scroll to bottom
-     * @param autoLoadMoreEnable
-     */
-    public void setAutoLoadMoreEnable(boolean autoLoadMoreEnable) {
-        isAutoLoadMoreEnable = autoLoadMoreEnable;
+    public boolean getRefreshEnable(){
+        return isRefreshEnable;
     }
 
     /**
@@ -145,7 +142,14 @@ public class SwipeRecyclerView extends FrameLayout
      *              if true when recyclerView scroll to bottom load more action will be trigger
      */
     public void setLoadMoreEnable(boolean loadMoreEnable) {
+        if(!loadMoreEnable){
+            stopLoadingMore();
+        }
         isLoadMoreEnable = loadMoreEnable;
+    }
+
+    public boolean getLoadMoreEnable(){
+        return isLoadMoreEnable;
     }
 
     /**
@@ -199,6 +203,14 @@ public class SwipeRecyclerView extends FrameLayout
     }
 
     /**
+     * support for GridLayoutManager
+     * @param spanSizeLookup
+     */
+    public void setSpanSizeLookup(SpanSizeLookup spanSizeLookup){
+        this.mSpanSizeLookup = spanSizeLookup;
+    }
+
+    /**
      * set the footer view
      * @param footerView
      *        the view to be showing when pull up
@@ -215,11 +227,10 @@ public class SwipeRecyclerView extends FrameLayout
      *        the view to be showing when the data set size is zero
      */
     public void setEmptyView(View emptyView){
-        this.mEmptyView = emptyView;
-        if(isEmptyViewShowing){
-            requestLayout();
-            invalidate();
+        if(mEmptyView != null){
+            removeView(mEmptyView);
         }
+        this.mEmptyView = emptyView;
 
         if(mDataObserver != null) {
             mDataObserver.onChanged();
@@ -246,39 +257,39 @@ public class SwipeRecyclerView extends FrameLayout
      * refresh or load more completed
      */
     public void complete(){
+        stopRefresh();
+        stopLoadingMore();
+    }
+
+    public void stopRefresh(){
         mRefreshLayout.setRefreshing(false);
-        stopLoadingMore(true);
     }
 
     /**
      * set refreshing
+     * if you want load data when first in, you can setRefreshing(true)
+     * after {@link #setOnLoadListener(OnLoadListener)}
      * @param refreshing
      */
     public void setRefreshing(boolean refreshing){
         mRefreshLayout.setRefreshing(refreshing);
-    }
-
-    /**
-     * stop loading more, so the footerView will be removed
-     */
-    public void stopLoadingMore(boolean animationEnable){
-        isLoadingMore = false;
-        if(mWrapperAdapter != null) {
-            mWrapperAdapter.notifyItemRemoved(mWrapperAdapter.getItemCount());
+        if(refreshing && !isLoadingMore && mListener != null){
+            mListener.onRefresh();
         }
-
     }
 
     /**
      * stop loading more without animation
-     * {@link #stopLoadingMore(boolean animationEnable)}
      */
     public void stopLoadingMore(){
-        stopLoadingMore(false);
+        isLoadingMore = false;
+        if(mWrapperAdapter != null) {
+            mWrapperAdapter.notifyItemRemoved(mWrapperAdapter.getItemCount());
+        }
     }
     
     /**
-     * call method refresh
+     * call method {@link OnLoadListener#onRefresh()}
      */
     @Override
     public void onRefresh() {
@@ -289,6 +300,7 @@ public class SwipeRecyclerView extends FrameLayout
 
     /**
      * {@link FooterViewListener#onNetChange(boolean isAvailable)}
+     * call when network is available or not available
      */
     public void onNetChange(boolean isAvailable) {
         if(mFootView != null){
@@ -298,6 +310,7 @@ public class SwipeRecyclerView extends FrameLayout
 
     /**
      * {@link FooterViewListener#onLoadingMore()}
+     * call when you need change footer view to loading status
      */
     public void onLoadingMore() {
         if(mFootView != null){
@@ -307,6 +320,7 @@ public class SwipeRecyclerView extends FrameLayout
 
     /**
      * {@link FooterViewListener#onNoMore(CharSequence message)}
+     * call when no more data add to list
      */
     public void onNoMore(CharSequence message) {
         if(mFootView != null){
@@ -316,6 +330,7 @@ public class SwipeRecyclerView extends FrameLayout
 
     /**
      * {@link FooterViewListener#onError(CharSequence message)}
+     * call when you need show error message
      */
     public void onError(CharSequence message) {
         if(mFootView != null){
@@ -334,6 +349,10 @@ public class SwipeRecyclerView extends FrameLayout
             this.mInnerAdapter = adapter;
         }
 
+        public boolean isLoadMoreItem(int position){
+            return isLoadMoreEnable && position == getItemCount() - 1;
+        }
+
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             if(TYPE_FOOTER == viewType){
@@ -344,7 +363,7 @@ public class SwipeRecyclerView extends FrameLayout
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            if(isLoadMoreEnable && position == getItemCount() - 1){
+            if(isLoadMoreItem(position)){
                 return;
             }
             mInnerAdapter.onBindViewHolder(holder, position);
@@ -353,7 +372,7 @@ public class SwipeRecyclerView extends FrameLayout
 
         @Override
         public int getItemViewType(int position) {
-            if(isLoadMoreEnable && position == getItemCount() - 1){
+            if(isLoadMoreItem(position)){
                 return TYPE_FOOTER;
             }else{
                 return mInnerAdapter.getItemViewType(position);
@@ -363,6 +382,11 @@ public class SwipeRecyclerView extends FrameLayout
         @Override
         public int getItemCount() {
             int count = mInnerAdapter == null ? 0 : mInnerAdapter.getItemCount();
+
+            //without loadingMore when adapter size is zero
+            if(count == 0){
+                return 0;
+            }
             return isLoadMoreEnable ? count + 1 : count;
         }
 
@@ -373,6 +397,14 @@ public class SwipeRecyclerView extends FrameLayout
 
         @Override
         public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
+            ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
+            if (lp != null
+                    && lp instanceof StaggeredGridLayoutManager.LayoutParams
+                    && isLoadMoreItem(holder.getLayoutPosition()))
+            {
+                StaggeredGridLayoutManager.LayoutParams p = (StaggeredGridLayoutManager.LayoutParams) lp;
+                p.setFullSpan(true);
+            }
             mInnerAdapter.onViewAttachedToWindow(holder);
         }
 
@@ -383,6 +415,20 @@ public class SwipeRecyclerView extends FrameLayout
 
         @Override
         public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+            RecyclerView.LayoutManager manager = recyclerView.getLayoutManager();
+            if (manager instanceof GridLayoutManager) {
+                final GridLayoutManager gridManager = ((GridLayoutManager) manager);
+                gridManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                    @Override
+                    public int getSpanSize(int position) {
+                        boolean isLoadMore = isLoadMoreItem(position);
+                        if(mSpanSizeLookup != null && !isLoadMore){
+                            return mSpanSizeLookup.getSpanSize(position);
+                        }
+                        return isLoadMore ? gridManager.getSpanCount() : 1;
+                    }
+                });
+            }
             mInnerAdapter.onAttachedToRecyclerView(recyclerView);
         }
 
@@ -437,17 +483,16 @@ public class SwipeRecyclerView extends FrameLayout
             if(adapter != null && mEmptyView != null){
 
                 int count = 0;
-                if(isLoadMoreEnable){
+                if(isLoadMoreEnable && adapter.getItemCount() != 0){
                     count ++;
                 }
                 if(adapter.getItemCount() == count){
                     isEmptyViewShowing = true;
                     if(mEmptyView.getParent() == null){
                         FrameLayout.LayoutParams params = new LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                         params.gravity = Gravity.CENTER;
 
-                        //// TODO: 2016/10/29 有可能多个emptyView重叠
                         addView(mEmptyView, params);
                     }
 
@@ -492,5 +537,12 @@ public class SwipeRecyclerView extends FrameLayout
             mWrapperAdapter.notifyItemRangeRemoved(positionStart, itemCount);
         }
 
+    }
+
+    public interface OnLoadListener {
+
+        void onRefresh();
+
+        void onLoadMore();
     }
 }

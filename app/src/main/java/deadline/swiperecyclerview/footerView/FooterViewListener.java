@@ -1,4 +1,4 @@
-package deadline.swiperecyclerview;
+package deadline.swiperecyclerview.footerView;
 
 /**
  * @author deadline
@@ -25,11 +25,4 @@ public interface FooterViewListener {
      *  错误时展示的View
      */
     void onError(CharSequence message);
-
-
-    /**
-     *
-     * @param animationEnable
-     */
-    void stopLoadingMore(boolean animationEnable);
 }

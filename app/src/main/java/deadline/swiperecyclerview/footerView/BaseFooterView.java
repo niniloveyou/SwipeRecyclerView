@@ -1,12 +1,8 @@
-package deadline.swiperecyclerview;
+package deadline.swiperecyclerview.footerView;
 
 import android.content.Context;
-import android.support.annotation.IntDef;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 /**
  * @auther deadline
