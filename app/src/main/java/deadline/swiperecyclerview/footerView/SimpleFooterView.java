@@ -21,6 +21,8 @@ public class SimpleFooterView extends BaseFooterView{
 
     private ProgressBar progressBar;
 
+    private View mContainer;
+
     public SimpleFooterView(Context context) {
         this(context, null);
     }
@@ -37,17 +39,20 @@ public class SimpleFooterView extends BaseFooterView{
         View view = LayoutInflater.from(getContext()).inflate(R.layout.layout_footer_view, this);
         progressBar = (ProgressBar) view.findViewById(R.id.footer_view_progressbar);
         mText = (TextView) view.findViewById(R.id.footer_view_tv);
+        mContainer = view.findViewById(R.id.footer);
     }
 
 
 
     @Override
     public void onLoadingMore() {
+        mContainer.setVisibility(VISIBLE);
         progressBar.setVisibility(VISIBLE);
         mText.setVisibility(GONE);
     }
 
     public void showText(){
+        mContainer.setVisibility(VISIBLE);
         progressBar.setVisibility(GONE);
         mText.setVisibility(VISIBLE);
     }
@@ -70,5 +75,10 @@ public class SimpleFooterView extends BaseFooterView{
     public void onNetChange(boolean isAvailable) {
         showText();
         mText.setText("网络连接不通畅!");
+    }
+
+    @Override
+    public void onReset() {
+        mContainer.setVisibility(GONE);
     }
 }

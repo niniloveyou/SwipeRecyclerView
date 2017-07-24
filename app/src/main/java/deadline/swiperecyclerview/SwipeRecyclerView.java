@@ -44,6 +44,7 @@ public class SwipeRecyclerView extends FrameLayout
     private boolean isLoadingMore;
     private boolean isLoadMoreEnable;
     private boolean isRefreshEnable;
+    private boolean isNotMoreData;
 
     private int lastVisiablePosition = 0;
 
@@ -66,6 +67,7 @@ public class SwipeRecyclerView extends FrameLayout
         isRefreshEnable = true;
         isLoadingMore = false;
         isLoadMoreEnable = true;
+        isNotMoreData = false;
 
         mFootView = new SimpleFooterView(getContext());
 
@@ -75,7 +77,7 @@ public class SwipeRecyclerView extends FrameLayout
         mLayoutManager = recyclerView.getLayoutManager();
 
         mRefreshLayout.setOnRefreshListener(this);
-        recyclerView.setOnScrollListener(new OnScrollListener() {
+        recyclerView.addOnScrollListener(new OnScrollListener() {
             @Override
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
@@ -85,7 +87,7 @@ public class SwipeRecyclerView extends FrameLayout
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 // do nothing if load more is not enable or refreshing or loading more
-                if(!isLoadMoreEnable || isRefreshing() || isLoadingMore){
+                if(!isLoadMoreEnable || isNotMoreData || isRefreshing() || isLoadingMore){
                     return;
                 }
 
@@ -106,6 +108,7 @@ public class SwipeRecyclerView extends FrameLayout
 
                     if(mListener != null){
                         isLoadingMore = true;
+                        SwipeRecyclerView.this.onLoadingMore();
                         mListener.onLoadMore();
                     }
                 }
@@ -283,17 +286,18 @@ public class SwipeRecyclerView extends FrameLayout
             mWrapperAdapter.notifyItemRemoved(mWrapperAdapter.getItemCount());
         }
     }
-    
+
     /**
      * call method {@link OnLoadListener#onRefresh()}
      */
     @Override
     public void onRefresh() {
+        isNotMoreData = false;
         if(mListener != null){
 
             //reset footer view status loading
             if(mFootView != null){
-                mFootView.onLoadingMore();
+                mFootView.onReset();
             }
             mListener.onRefresh();
         }
@@ -324,6 +328,7 @@ public class SwipeRecyclerView extends FrameLayout
      * call when no more data add to list
      */
     public void onNoMore(CharSequence message) {
+        isNotMoreData = true;
         if(mFootView != null){
             mFootView.onNoMore(message);
         }
