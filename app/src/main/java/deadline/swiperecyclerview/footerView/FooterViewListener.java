@@ -25,4 +25,6 @@ public interface FooterViewListener {
      *  错误时展示的View
      */
     void onError(CharSequence message);
+
+    void onReset();
 }

@@ -1,8 +1,7 @@
 package deadline.swiperecyclerview;
 
-import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -10,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
     private List<String> data;
     private RecyclerViewAdapter adapter;
     private int pagerSize = 10;
+
+    private Runnable mRefresh, mLoadMore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +103,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onRefresh() {
 
-                new Handler().postDelayed(new Runnable() {
+                if (mLoadMore != null) {
+                    recyclerView.removeCallbacks(mLoadMore);
+                }
+
+                mRefresh = new Runnable() {
                     @Override
                     public void run() {
                         data.clear();
@@ -111,29 +117,33 @@ public class MainActivity extends AppCompatActivity {
 
                         recyclerView.complete();
                         adapter.notifyDataSetChanged();
-
                     }
-                }, 1000);
+                };
+
+                recyclerView.postDelayed(mRefresh, 2000);
 
             }
 
             @Override
             public void onLoadMore() {
-                new Handler().postDelayed(new Runnable() {
+
+                mLoadMore = new Runnable() {
                     @Override
                     public void run() {
                         for (int i = 0; i < pagerSize; i++) {
                             data.add(String.valueOf(i));
                         }
 
-                        if(data.size() > 20){
+                        recyclerView.stopLoadingMore();
+                        if(data.size() >= 20){
                             recyclerView.onNoMore("-- the end --");
                         }else {
-                            recyclerView.stopLoadingMore();
                             adapter.notifyDataSetChanged();
                         }
                     }
-                }, 1000);
+                };
+
+                recyclerView.postDelayed(mLoadMore, 2000);
             }
         });
 
